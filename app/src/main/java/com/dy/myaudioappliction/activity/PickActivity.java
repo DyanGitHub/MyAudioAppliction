@@ -1,8 +1,15 @@
 package com.dy.myaudioappliction.activity;
 
 import android.app.Activity;
+import android.app.Dialog;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.content.Intent;
+import android.database.Cursor;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,6 +18,7 @@ import android.widget.BaseAdapter;
 import android.widget.CheckBox;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.dy.myaudioappliction.R;
 import com.dy.myaudioappliction.localmedia.FileInfo;
@@ -54,8 +62,131 @@ public class PickActivity extends Activity {
 
 			}
 		});
+		findViewById(R.id.localFileDir).setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View view) {
+				new TypeDialog(mActivity).show();
+
+			}
+		});
+	}
+	/*
+	   调用本地文件管理器进行选择
+	 */
+	//设置不同类型的文件选择器
+    public void invokeLocalFileManager(String type)
+	{
+		Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+		intent.setType(type);//设置类型，任意类型，任意后缀的可以这样写:*/*。
+		intent.addCategory(Intent.CATEGORY_OPENABLE);
+		startActivityForResult(intent, 1);
+	}
+	//多种文件类型选择请求
+	public class  TypeDialog extends Dialog{
+
+		public TypeDialog(Context context) {
+			super(context);
+		}
+
+		@Override
+		protected void onCreate(Bundle savedInstanceState) {
+			super.onCreate(savedInstanceState);
+			setContentView(R.layout.localkind);
+			findViewById(R.id.all).setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View view) {
+					invokeLocalFileManager("*/*");
+					dismiss();
+				}
+			});
+			findViewById(R.id.image).setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View view) {
+					invokeLocalFileManager("image/*");
+					dismiss();
+				}
+			});
+			findViewById(R.id.audio).setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View view) {
+					invokeLocalFileManager("audio/*");
+					dismiss();
+				}
+			});
+			findViewById(R.id.vedio).setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View view) {
+					invokeLocalFileManager("video/*");
+					dismiss();
+				}
+			});
+			findViewById(R.id.vedioandimage).setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View view) {
+					invokeLocalFileManager("video/*;image/*");
+					dismiss();
+				}
+			});
+			setCanceledOnTouchOutside(true);
+		}
 	}
 
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if (resultCode == Activity.RESULT_OK) {//是否选择，没选择就不会继续
+			Uri uri = data.getData();//得到uri，后面就是将uri转化成file的过程。
+			//避免获取fileName时，Cursor为null的解决方案:scheme进行判断
+			String scheme = uri.getScheme();
+			String path = null;
+			if (scheme == null)
+				path = uri.getPath();
+			else if (ContentResolver.SCHEME_FILE.equals(scheme)) {
+				path = uri.getPath();
+			} else if (ContentResolver.SCHEME_CONTENT.equals(scheme)) {
+				String[] proj = {MediaStore.Images.Media.DATA};
+				Cursor actualimagecursor = getContentResolver().query(uri, proj, null, null, null);
+				if (actualimagecursor != null && actualimagecursor.moveToFirst()) {
+					int actual_image_column_index = actualimagecursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+					path = actualimagecursor.getString(actual_image_column_index);
+				}
+				actualimagecursor.close();
+			}
+			if (path != null)
+				Toast.makeText(PickActivity.this, path, Toast.LENGTH_SHORT).show();
+		}
+	}
+
+	/*
+	   播放指定曲
+	 */
+	MediaPlayer player;
+	private void play(String path) {
+		Logger.d("path:" + path);
+		if (player == null) {
+			player = new MediaPlayer();
+			player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+				@Override
+				public void onPrepared(MediaPlayer mediaPlayer) {
+					player.start();
+				}
+			});
+		}
+		if (player.isPlaying()) {
+			player.stop();
+			player.reset();
+		}
+
+		try {
+			player.setDataSource(path);
+			player.prepareAsync();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	/*
+	   通过查询得到的音频列表显示
+	 */
 	BaseAdapter myAdapter = new BaseAdapter() {
 		@Override
 		public int getCount() {
@@ -104,35 +235,6 @@ public class PickActivity extends Activity {
 			return view;
 		}
 	};
-	/*
-	   播放指定曲
-	 */
-	MediaPlayer player;
-	private void play(String path) {
-		Logger.d("path:"+path);
-		if(player==null)
-		{
-			player=new MediaPlayer();
-			player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-				@Override
-				public void onPrepared(MediaPlayer mediaPlayer) {
-					player.start();
-				}
-			});
-		}
-		if(player.isPlaying())
-		{
-			player.stop();
-			player.reset();
-		}
-
-		try {
-			player.setDataSource(path);
-			player.prepareAsync();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
 
 	public class ViewHolder {
 		View mainview;
