@@ -15,7 +15,7 @@ import java.util.ArrayList;
  */
 public class PickUtil {
 	/*
-	   获取sd卡音频文件
+	   获取sd卡音频文件（存有音频文件未被检测出来的可能）
 	 */
 	public static ArrayList<FileInfo> queryAllAudio(final Context context) {
 		if (context == null) { //判断传入的参数的有效性
@@ -88,6 +88,39 @@ public class PickUtil {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy年MM月dd日");
 		String result=sdf.format(time);
 		return result;
+	}
+	/**
+	 * 根据时间点转成文本显示00:00:00 （音乐盒显示会用到）
+	 */
+	public static String millsecondsToStr(int seconds){
+		seconds = seconds / 1000;
+		String result = "";
+		int hour = 0, min = 0, second = 0;
+		hour = seconds / 3600;
+		min = (seconds - hour * 3600) / 60;
+		second = seconds - hour * 3600 - min * 60;
+		if(hour!=0)
+		{
+			if (hour < 10) {
+				result += "0" + hour + ":";
+			} else {
+				result += hour + ":";
+			}
+		}
+
+		if (min < 10) {
+			result += "0" + min + ":";
+		} else {
+			result += min + ":";
+		}
+		if (second < 10) {
+			result += "0" + second;
+		} else {
+			result += second;
+		}
+
+		return result;
+
 	}
 
 }
