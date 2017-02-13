@@ -58,7 +58,18 @@ public class PickActivity extends Activity {
 						files.add(file);
 				}
 				if (files.size() != 0)
+				{
 					TranscodeActivity.newInstance(mActivity, files);
+				}else
+				{
+					ArrayList<FileInfo> list=new ArrayList<>();
+					FileInfo fileInfo=new FileInfo();
+					//测试
+					fileInfo.setFilePath("/storage/emulated/0/smartisan/Recorder/Rec_001.wav");
+					list.add(fileInfo);
+					TranscodeActivity.newInstance(mActivity,list);
+				}
+
 
 			}
 		});
@@ -153,7 +164,18 @@ public class PickActivity extends Activity {
 				actualimagecursor.close();
 			}
 			if (path != null)
+			{
 				Toast.makeText(PickActivity.this, path, Toast.LENGTH_SHORT).show();
+				//获取到本地所选音频目录
+				ArrayList<FileInfo> list=new ArrayList<>();
+				FileInfo fileInfo=new FileInfo();
+				Logger.d("path:"+path);
+				fileInfo.setFilePath(path);
+				list.add(fileInfo);
+				TranscodeActivity.newInstance(mActivity,list);
+
+			}
+
 		}
 	}
 
